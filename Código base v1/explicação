@@ -1,0 +1,99 @@
+Explicação do Código
+Esse código é um scanner de interferência na faixa de frequência do Bluetooth , utilizando o NRF24L01 , um módulo de comunicação sem fio de 2,4 GHz.
+
+Bibliotecas Importadas
+#include <SPI.h>
+#include <RF24.h>
+
+SPI.h : Biblioteca para comunicação via SPI (Protocolo de Comunicação Serial).
+
+RF24.h : Biblioteca para operar o módulo NRF24L01 .
+
+Definição de Pinos
+
+#define CE_PIN   7
+#define CSN_PIN  8
+#define SCK_PIN  4
+#define MISO_PIN 5
+#define MOSI_PIN 6
+
+Aqui estão definidos os pinos do módulo NRF24L01 conectado ao microcontrolador.
+
+Inicialização do Rádio
+
+RF24 radio(CE_PIN, CSN_PIN);
+
+Crie um objeto radiopara operar o NRF24L01 .
+
+Frequências do Bluetooth e NRF24L01
+
+const uint8_t canais_bluetooth[] = { 2, 3, 4, ..., 80 };
+const int num_canais = sizeof(canais_bluetooth) / sizeof(canais_bluetooth[0]);
+int canal_atual = 0;
+
+O Bluetooth opera entre 2.402 GHz e 2.480 GHz com canais de 1 MHz.
+
+O NRF24L01 opera entre 2.400 GHz e 2.525 GHz , então ele pode escanear os canais do Bluetooth.
+
+Configuração Inicial ( setup)
+
+void setup() {
+    Serial.begin(9600);
+    SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, CSN_PIN);
+    radio.begin();
+    radio.setPALevel(RF24_PA_HIGH);
+    radio.setAutoAck(false);
+    radio.setRetries(0, 0);
+    Serial.println("Scanner e interferência em toda a faixa Bluetooth iniciados...");
+  }
+
+  Inicia a comunicação serial (9600 baud).
+
+Inicialize o bloqueio SPI .
+
+Configuração do NRF24L01 :
+
+radio.setPALevel(RF24_PA_HIGH);→ Definir a potência de transmissão no máximo.
+
+radio.setAutoAck(false);→ Desativa a resposta automática.
+
+radio.setRetries(0, 0);→ Remover tentativa de retransmissão.
+
+Loop Principal ( loop)
+
+void loop() {
+    radio.setChannel(canais_bluetooth[canal_atual]);
+    radio.startListening();
+    
+    delay(5); 
+  
+    if (radio.testCarrier()) {  
+      Serial.print("Interferindo no canal: ");
+      Serial.println(canais_bluetooth[canal_atual]);
+  
+      radio.stopListening();
+      while (radio.testCarrier()) {  
+        radio.write("Jamming", 7);
+        delay(2);  
+      }
+    }
+  
+    canal_atual = (canal_atual + 1) % num_canais;
+  }
+
+  Sintoniza ou rádio para um canal Bluetooth .
+
+Escuta se há um sinal forte no canal :
+
+radio.testCarrier()→ Testa se há uma portadora forte no canal.
+
+Se houver interferência bloqueada , o código:
+
+Imprima o canal sem qualquer interferência.
+
+Para ouvir ( radio.stopListening()).
+
+Fica transmitindo "Jamming"repetidamente.
+
+Troque para o próximo canal e repita o processo.
+

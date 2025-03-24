@@ -1,0 +1,35 @@
+Ajustar a potência máxima do NRF24L01
+O NRF24L01 tem quatro níveis de potência configuráveis:
+
+RF24_PA_MIN (mínimo)
+RF24_PA_LOW (baixo)
+RF24_PA_HIGH (alto)
+RF24_PA_MAX (máximo)
+//////////////////////////
+reduzir a taxa de dados para 1 Mbps ou 250 kbps , o que melhora a estabilidade e o alcance: 
+radio.setDataRate(RF24_250KBPS);
+/////////////////////////
+aumentar o tempo de permanência em cada canal antes de mudar para o próximo:
+delay(5);  // Mantém o canal por 5 ms antes de mudar
+////////////////////////
+Transmitir dados de forma contínua
+radio.stopListening();
+for (int j = 0; j < 50; j++) {  // Envia 50 pacotes antes de mudar de canal
+    radio.write("Jamming", 7);
+    delayMicroseconds(500);
+}
+Isso manterá o canal mais ocupado antes de mudar.
+////////////////////////
+Reduzir a taxa de transmissão:
+radio.setDataRate(RF24_250KBPS);
+Isso faz com que o NRF24L01 ocupe o canal por mais tempo a cada envio, já que os pacotes são transmitidos mais lentamente.
+////////////////////////
+Para enviar a maior quantidade de pacotes apenas nos canais que estão em uso, podemos ajustar o código para detectar se o canal está realmente ocupado antes de decidir quantos pacotes enviar. Vamos adicionar uma lógica para enviar mais pacotes apenas nos canais onde a presença do sinal foi bloqueada.
+
+Quando um canal estiver ocupado (detectado pelo radio.testCarrier()), o código enviará um número maior de pacotes.
+Se o canal não estiver ocupado, ele apenas avança para o próximo canal sem enviar pacotes.
+/////////////////////////
+Mudanças:
+Número de pacotes : Quando um canal está em uso (detectado pelo radio.testCarrier()), o código envia 50 pacotes executados (ou o valor que você escolher).
+Lógica de detecção : Somente canais com presença de sinal ( radio.testCarrier() == true) receberão interferência, evitando o envio de pacotes para canais que não estão em uso.
+Com isso, o código agora se concentra mais nos canais ativos, tornando a interferência mais eficiente.
